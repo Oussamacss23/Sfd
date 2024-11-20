@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ربط المحفظة مع العقد الذكي</title>
+</head>
+<body>
+    <button id="connectButton">ربط المحفظة</button>
+    <button id="checkEligibilityButton">تحقق من الأهلية</button>
+    <button id="checkFeeButton">عرض الرسوم</button>
+    <button id="getRecipientButton">عرض عنوان المستفيد</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.0.0/dist/ethers.umd.min.js"></script>
+    <script>
+        let provider;
+        let signer;
+        let contract;
+
+        // عنوان العقد الذكي و ABI
+        const contractAddress = "0x9EBAE9B5b3cf3E39ac371Ff2b8FF769B2C3C1A9A"; // عنوان العقد الذكي
+        const contractABI = [
+            {
+                "inputs": [],
+                "name": "checkEligibility",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "fee",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "recipient",
+                "outputs": [
+                    {
+                        "internalType": "address payable",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // تحقق مما إذا كانت MetaMask موجودة
+        if (typeof window.ethereum !== 'undefined') {
+            console.log("MetaMask موجودة!");
+        } else {
+            alert("لم يتم العثور على MetaMask. من فضلك قم بتثبيتها أولاً من خلال الرابط: https://metamask.io/download.html");
+        }
+
+        // وظيفة الاتصال بـ MetaMask
+        async function connectMetaMask() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    // طلب الحسابات من MetaMask
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+                    // إعداد المزود والموقع من MetaMask
+                    provider = new ethers.providers.Web3Provider(window.ethereum);
+                    signer = provider.getSigner();
+                    const userAddress = await signer.getAddress();
+                    console.log("عنوان المحفظة:", userAddress);
+
+                    // إعداد العقد الذكي
+                    contract = new ethers.Contract(contractAddress, contractABI, signer);
+                    alert("تم ربط المحفظة بنجاح!");
+
+                } catch (error) {
+                    console.error("فشل الاتصال بالمحفظة:", error);
+                    alert("حدث خطأ أثناء الاتصال بـ MetaMask.");
+                }
+            }
+        }
+
+        // وظيفة التحقق من الأهلية عبر العقد الذكي
+        async function checkEligibility() {
+            if (contract) {
+                try {
+                    await contract.checkEligibility({ value: ethers.utils.parseEther("0.1") }); // إرسال 0.1 ETH لاختبار الوظيفة
+                    alert("تم التحقق من الأهلية بنجاح!");
+                } catch (error) {
+                    console.error("فشل التحقق من الأهلية:", error);
+                    alert("حدث خطأ أثناء التحقق من الأهلية.");
+                }
+            } else {
+                alert("يجب ربط المحفظة أولاً.");
+            }
+        }
+
+        // عرض الرسوم عبر العقد الذكي
+        async function checkFee() {
+            if (contract) {
+                try {
+                    const fee = await contract.fee();
+                    alert("الرسوم: " + ethers.utils.formatEther(fee) + " ETH");
+                } catch (error) {
+                    console.error("فشل في جلب الرسوم:", error);
+                    alert("حدث خطأ أثناء جلب الرسوم.");
+                }
+            } else {
+                alert("يجب ربط المحفظة أولاً.");
+            }
+        }
+
+        // عرض عنوان المستفيد عبر العقد الذكي
+        async function getRecipient() {
+            if (contract) {
+                try {
+                    const recipientAddress = await contract.recipient();
+                    alert("عنوان المستفيد: " + recipientAddress);
+                } catch (error) {
+                    console.error("فشل في جلب عنوان المستفيد:", error);
+                    alert("حدث خطأ أثناء جلب عنوان المستفيد.");
+                }
+            } else {
+                alert("يجب ربط المحفظة أولاً.");
+            }
+        }
+
+        // ربط الزر بالحدث
+        document.getElementById("connectButton").addEventListener("click", connectMetaMask);
+        document.getElementById("checkEligibilityButton").addEventListener("click", checkEligibility);
+        document.getElementById("checkFeeButton").addEventListener("click", checkFee);
+        document.getElementById("getRecipientButton").addEventListener("click", getRecipient);
+    </script>
+</body>
+</html>
